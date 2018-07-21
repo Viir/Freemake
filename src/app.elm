@@ -1,6 +1,8 @@
 import GameWorld
 import Html exposing (Html)
+import Html.Attributes as HA
 import Svg
+import Svg.Attributes as SA
 
 
 type alias State =
@@ -34,5 +36,5 @@ subscriptions state = Sub.none
 view : State -> Html.Html Event
 view state =
     [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput ]
-    |> Svg.svg []
+    |> Svg.svg [ SA.viewBox "0 0 400 400", HA.style [("width","100%"),("height","96vh")]]
 
