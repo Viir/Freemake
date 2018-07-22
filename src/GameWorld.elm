@@ -93,6 +93,9 @@ edgeViewWidth = 4
 nodeViewRadius : Float
 nodeViewRadius = 10
 
+playerLocationIndicatorRadiusBase : Float
+playerLocationIndicatorRadiusBase = nodeViewRadius * 0.4
+
 viewEdge : State -> EdgeDirection -> Svg.Svg event
 viewEdge worldState edge =
     case getEdgeDerivedProperties worldState.nodes edge of
@@ -115,12 +118,17 @@ viewNode worldState (nodeId, node) =
     let
         isPlayerLocatedHere = worldState.playerLocation == (OnNode nodeId)
 
+        canPlayerGetHereDirectly =
+            (worldState |> updateForPlayerInput (MoveToNode nodeId)).playerLocation == (OnNode nodeId)
+
         nodeBaseView =
             Svg.circle [ SA.r (nodeViewRadius |> toString), SA.fill "grey" ] []
 
         playerView =
             if isPlayerLocatedHere
-            then Svg.circle [ SA.r "4", SA.fill "black" ] []
+            then svgCircleFromRadiusAndFillAndStroke (playerLocationIndicatorRadiusBase, "black") Nothing
+            else if canPlayerGetHereDirectly
+            then playerCanGetHereDirectlyIndication
             else Html.text ""
 
         transformAttribute = SA.transform (node.visualLocation |> Point2d.coordinates |> Visuals.svgTransformTranslate)
@@ -138,3 +146,19 @@ getEdgeDerivedProperties nodes (origNodeId, destNodeId) =
         case (visualLocationFromNodeId origNodeId, visualLocationFromNodeId destNodeId) of
         (Just origLocation, Just destLocation) -> Just { origLocation = origLocation, destLocation = destLocation }
         _ -> Nothing
+
+playerCanGetHereDirectlyIndication : Svg.Svg event
+playerCanGetHereDirectlyIndication =
+    svgCircleFromRadiusAndFillAndStroke
+        (playerLocationIndicatorRadiusBase, "none")
+        (Just (playerLocationIndicatorRadiusBase / 4, "black"))
+
+svgCircleFromRadiusAndFillAndStroke : (Float, String) -> Maybe (Float, String) -> Svg.Svg event
+svgCircleFromRadiusAndFillAndStroke (radius, fill) maybeStrokeWidthAndColor =
+    let
+        strokeAttributes =
+            maybeStrokeWidthAndColor
+            |> Maybe.map (\(strokeWidth, strokeColor) -> [ SA.stroke strokeColor, SA.strokeWidth (strokeWidth |> toString) ])
+            |> Maybe.withDefault []
+    in
+        Svg.circle ([SA.r (radius |> toString), SA.fill fill] ++ strokeAttributes) []
