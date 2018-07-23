@@ -1,8 +1,11 @@
 import GameWorld
+import Visuals
+import BoundingBox2d exposing (BoundingBox2d)
 import Html exposing (Html)
 import Html.Attributes as HA
 import Svg
 import Svg.Attributes as SA
+import Dict
 
 
 type alias State =
@@ -35,6 +38,13 @@ subscriptions state = Sub.none
 
 view : State -> Html.Html Event
 view state =
-    [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput ]
-    |> Svg.svg [ SA.viewBox "0 0 400 400", HA.style [("width","100%"),("height","96vh")]]
+    let
+        viewbox =
+            state.gameWorld.nodes |> Dict.values |> List.map .visualLocation
+            |> BoundingBox2d.containingPoints
+            |> Maybe.withDefault (BoundingBox2d.fromExtrema { minX = 0, minY = 0, maxX = 100, maxY = 100 })
+            |> Visuals.svgViewBoxFromBoundingBox
+    in
+        [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput ]
+        |> Svg.svg [ SA.viewBox viewbox, HA.style [("width","100%"),("height","96vh")]]
 

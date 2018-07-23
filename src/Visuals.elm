@@ -1,8 +1,10 @@
 module Visuals exposing (..)
 
 import Point2d exposing (Point2d)
+import BoundingBox2d exposing (BoundingBox2d)
 import Svg
 import Svg.Attributes as SA
+import Tuple2
 
 
 type SvgPathConnectionFromPreviousElement = MoveTo | LineTo
@@ -38,3 +40,10 @@ svgPathConnectionStringFromType connectionFromPreviousElement =
   case connectionFromPreviousElement of
   MoveTo -> "M"
   LineTo -> "L"
+
+svgViewBoxFromBoundingBox : BoundingBox2d -> String
+svgViewBoxFromBoundingBox boundingBox =
+  [ (boundingBox |> BoundingBox2d.minX, boundingBox |> BoundingBox2d.minY), boundingBox |> BoundingBox2d.dimensions ]
+  |> List.concatMap Tuple2.toList
+  |> List.map toString
+  |> String.join " "
