@@ -89,7 +89,7 @@ view : State -> Svg.Svg FromPlayerInput
 view state =
     let
         nodesView = state.nodes |> Dict.toList |> List.map (viewNode state) |> Svg.g []
-        edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g []
+        edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g [ SA.opacity "0.5" ]
     in
         [   state.visuals |> viewVisuals
         ,   edgesView
@@ -140,12 +140,15 @@ viewNode worldState (nodeId, node) =
             then playerCanGetHereDirectlyIndication
             else Html.text ""
 
+        opacity =
+            if isPlayerLocatedHere then 1 else if canPlayerGetHereDirectly then 0.7 else 0.4
+
         transformAttribute = SA.transform (node.visualLocation |> Point2d.coordinates |> Visuals.svgTransformTranslate)
 
         inputAttribute = Pointer.onDown (always (MoveToNode nodeId))
     in
         [ nodeBaseView, playerView ]
-        |> Svg.g [ inputAttribute, transformAttribute ]
+        |> Svg.g [ inputAttribute, transformAttribute, SA.opacity (opacity |> toString) ]
 
 viewVisuals : GameWorldVisuals -> Svg.Svg event
 viewVisuals visuals =
