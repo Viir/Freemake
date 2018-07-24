@@ -8,6 +8,7 @@ import LineSegment2d exposing (LineSegment2d)
 import Dict
 import Set
 import Html
+import Html.Attributes as HA
 import Pointer
 import Svg
 import Svg.Attributes as SA
@@ -146,8 +147,13 @@ viewNode worldState (nodeId, node) =
     let
         isPlayerLocatedHere = worldState.playerLocation == (OnNode nodeId)
 
-        canPlayerGetHereDirectly =
-            (worldState |> updateForPlayerInput (MoveToNode nodeId)).playerLocation == (OnNode nodeId)
+        pointerDownEvent = MoveToNode nodeId
+
+        worldAfterPointerDownEvent = worldState |> updateForPlayerInput pointerDownEvent
+
+        indicateEffectForInput = worldAfterPointerDownEvent.playerLocation /= worldState.playerLocation
+
+        canPlayerGetHereDirectly = worldAfterPointerDownEvent.playerLocation == (OnNode nodeId)
 
         nodeBaseView =
             Svg.circle [ SA.r (nodeViewRadius |> toString), SA.fill "grey" ] []
@@ -164,10 +170,14 @@ viewNode worldState (nodeId, node) =
 
         transformAttribute = SA.transform (node.visualLocation |> Point2d.coordinates |> Visuals.svgTransformTranslate)
 
-        inputAttribute = Pointer.onDown (always (MoveToNode nodeId))
+        inputAttributes =
+            [ Pointer.onDown (always pointerDownEvent) ] ++
+            (if indicateEffectForInput
+            then [ HA.style [("cursor","pointer")] ]
+            else [])
     in
         [ nodeBaseView, playerView ]
-        |> Svg.g [ inputAttribute, transformAttribute, SA.opacity (opacity |> toString) ]
+        |> Svg.g (inputAttributes ++ [ transformAttribute, SA.opacity (opacity |> toString) ])
 
 viewVisuals : GameWorldVisuals -> Svg.Svg event
 viewVisuals visuals =
