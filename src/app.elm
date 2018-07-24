@@ -5,7 +5,6 @@ import Html exposing (Html)
 import Html.Attributes as HA
 import Svg
 import Svg.Attributes as SA
-import Dict
 
 
 type alias State =
@@ -40,9 +39,7 @@ view : State -> Html.Html Event
 view state =
     let
         viewbox =
-            state.gameWorld.nodes |> Dict.values |> List.map .visualLocation
-            |> BoundingBox2d.containingPoints
-            |> Maybe.withDefault (BoundingBox2d.fromExtrema { minX = 0, minY = 0, maxX = 100, maxY = 100 })
+            BoundingBox2d.fromExtrema { minX = -300, minY = -200, maxX = 300, maxY = 200 }
             |> Visuals.svgViewBoxFromBoundingBox
     in
         [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput ]

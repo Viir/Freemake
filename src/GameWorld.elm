@@ -93,11 +93,18 @@ view state =
     let
         nodesView = state.nodes |> Dict.toList |> List.map (viewNode state) |> Svg.g []
         edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g [ SA.opacity "0.5" ]
+
+        playerVisualLocation =
+            case state.playerLocation of
+            OnNode nodeId -> state.nodes |> Dict.get nodeId |> Maybe.map .visualLocation |> Maybe.withDefault Point2d.origin
+
+        viewportOffset =
+            playerVisualLocation |> Point2d.coordinates |> Tuple2.mapBoth negate
     in
         [   state.visuals |> viewVisuals
         ,   edgesView
         ,   nodesView
-        ] |> Svg.g []
+        ] |> Svg.g [ SA.transform (Visuals.svgTransformTranslate viewportOffset)]
 
 edgeViewWidth : Float
 edgeViewWidth = 2
