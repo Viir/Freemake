@@ -1,6 +1,7 @@
 module Visuals exposing (..)
 
 import Point2d exposing (Point2d)
+import LineSegment2d exposing (LineSegment2d)
 import BoundingBox2d exposing (BoundingBox2d)
 import Svg
 import Svg.Attributes as SA
@@ -15,6 +16,10 @@ type alias Float2 = (Float, Float)
 svgTransformTranslate : Float2 -> String
 svgTransformTranslate (x, y) =
   "translate(" ++ (x |> toString) ++ "," ++ (y |> toString) ++ ")"
+
+svgLineSegmentWithStroke : (String, Float) -> LineSegment2d -> Svg.Svg event
+svgLineSegmentWithStroke stroke lineSegment =
+  svgPolylineWithStroke stroke (lineSegment |> LineSegment2d.endpoints |> Tuple2.toList)
 
 svgPolylineWithStroke : (String, Float) -> List Point2d -> Svg.Svg event
 svgPolylineWithStroke (stroke, strokeWidth) points =
