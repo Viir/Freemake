@@ -13,6 +13,9 @@ type SvgPathConnectionFromPreviousElement = MoveTo | LineTo
 type alias Float2 = (Float, Float)
 
 
+cssFontFamily : String
+cssFontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+
 svgTransformTranslate : Float2 -> String
 svgTransformTranslate (x, y) =
   "translate(" ++ (x |> toString) ++ "," ++ (y |> toString) ++ ")"

@@ -52,7 +52,18 @@ view state =
         viewbox =
             BoundingBox2d.fromExtrema { minX = -300, minY = -200, maxX = 300, maxY = 200 }
             |> Visuals.svgViewBoxFromBoundingBox
-    in
-        [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput |> Console.applyCameraTransformToSvg state.console ]
-        |> Svg.svg [ SA.viewBox viewbox, HA.style [("width","100%"),("height","96vh")]]
 
+        gameWorldSvg =
+            [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput |> Console.applyCameraTransformToSvg state.console ]
+            |> Svg.svg [ SA.viewBox viewbox, HA.style [("width","100%"),("height","96vh")]]
+    in
+        [ gameWorldSvg, productVersionOverlay ]
+        |> Html.div [ HA.style [("font-family", Visuals.cssFontFamily)]]
+
+productVersionOverlay : Html.Html e
+productVersionOverlay =
+    [ ("Freemake v" ++ productVersion) |> Html.text ]
+    |> Html.div [ HA.style [("position","absolute"),("top","3px"),("margin","1px")]]
+
+productVersion : String
+productVersion = "2018-07-25"
