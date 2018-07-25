@@ -170,7 +170,7 @@ viewNode worldState (nodeId, node) =
             else [])
 
         additionalInputArea =
-            svgCircleFromRadiusAndFillAndStroke (nodeViewRadius * 2, "transparent") Nothing
+            svgCircleFromRadiusAndFillAndStroke (nodeViewRadius * 4, "transparent") Nothing
     in
         [ additionalInputArea, nodeBaseView, playerView ]
         |> Svg.g (inputAttributes ++ [ transformAttribute, SA.opacity (opacity |> toString) ])
