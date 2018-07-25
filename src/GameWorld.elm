@@ -1,4 +1,4 @@
-module GameWorld exposing (Node, State, FromPlayerInput, init, updateForPlayerInput, view)
+module GameWorld exposing (Node, State, Location(..), FromPlayerInput, init, updateForPlayerInput, view)
 
 import Visuals
 import Point2d exposing (Point2d)
@@ -93,18 +93,11 @@ view state =
     let
         nodesView = state.nodes |> Dict.toList |> List.map (viewNode state) |> Svg.g []
         edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g [ SA.opacity "0.5" ]
-
-        playerVisualLocation =
-            case state.playerLocation of
-            OnNode nodeId -> state.nodes |> Dict.get nodeId |> Maybe.map .visualLocation |> Maybe.withDefault Point2d.origin
-
-        viewportOffset =
-            playerVisualLocation |> Point2d.coordinates |> Tuple2.mapBoth negate
     in
         [   state.visuals |> viewVisuals
         ,   edgesView
         ,   nodesView
-        ] |> Svg.g [ SA.transform (Visuals.svgTransformTranslate viewportOffset)]
+        ] |> Svg.g []
 
 edgeViewWidth : Float
 edgeViewWidth = 2
@@ -156,7 +149,7 @@ viewNode worldState (nodeId, node) =
         canPlayerGetHereDirectly = worldAfterPointerDownEvent.playerLocation == (OnNode nodeId)
 
         nodeBaseView =
-            Svg.circle [ SA.r (nodeViewRadius |> toString), SA.fill "grey" ] []
+            svgCircleFromRadiusAndFillAndStroke (nodeViewRadius, "grey") Nothing
 
         playerView =
             if isPlayerLocatedHere
@@ -175,8 +168,11 @@ viewNode worldState (nodeId, node) =
             (if indicateEffectForInput
             then [ HA.style [("cursor","pointer")] ]
             else [])
+
+        additionalInputArea =
+            svgCircleFromRadiusAndFillAndStroke (nodeViewRadius * 2, "transparent") Nothing
     in
-        [ nodeBaseView, playerView ]
+        [ additionalInputArea, nodeBaseView, playerView ]
         |> Svg.g (inputAttributes ++ [ transformAttribute, SA.opacity (opacity |> toString) ])
 
 viewVisuals : GameWorldVisuals -> Svg.Svg event

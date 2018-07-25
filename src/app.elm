@@ -1,17 +1,22 @@
 import GameWorld
+import Console
 import Visuals
 import BoundingBox2d exposing (BoundingBox2d)
 import Html exposing (Html)
 import Html.Attributes as HA
 import Svg
 import Svg.Attributes as SA
+import AnimationFrame
 
 
 type alias State =
     {   gameWorld : GameWorld.State
+    ,   console : Console.State
     }
 
-type Event = PlayerInput GameWorld.FromPlayerInput
+type Event
+    = PlayerInput GameWorld.FromPlayerInput
+    | AnimationFrameDiff Float
 
 
 main : Program Never State Event
@@ -24,16 +29,22 @@ main =
     }
 
 init : (State, Cmd Event)
-init = ({ gameWorld = GameWorld.init }, Cmd.none)
+init = ({ gameWorld = GameWorld.init, console = Console.init GameWorld.init }, Cmd.none)
 
 update : Event -> State -> (State, Cmd Event)
 update event stateBefore =
     case event of
     PlayerInput playerInput ->
-        ( { stateBefore | gameWorld = stateBefore.gameWorld |> GameWorld.updateForPlayerInput playerInput } , Cmd.none)
+        let
+            gameWorld = stateBefore.gameWorld |> GameWorld.updateForPlayerInput playerInput
+            console = stateBefore.console |> Console.updateForChangedGame gameWorld
+        in
+            ( { stateBefore | gameWorld = gameWorld, console = console }, Cmd.none)
+    AnimationFrameDiff diff ->
+        ( { stateBefore | console = stateBefore.console |> Console.updateForTimeProgress (diff |> round) } , Cmd.none)
 
 subscriptions : State -> Sub Event
-subscriptions state = Sub.none
+subscriptions state = AnimationFrame.diffs AnimationFrameDiff
 
 view : State -> Html.Html Event
 view state =
@@ -42,6 +53,6 @@ view state =
             BoundingBox2d.fromExtrema { minX = -300, minY = -200, maxX = 300, maxY = 200 }
             |> Visuals.svgViewBoxFromBoundingBox
     in
-        [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput ]
+        [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput |> Console.applyCameraTransformToSvg state.console ]
         |> Svg.svg [ SA.viewBox viewbox, HA.style [("width","100%"),("height","96vh")]]
 
