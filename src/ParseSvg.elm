@@ -5,6 +5,7 @@ import Vector2d exposing (Vector2d)
 import XmlParser
 import Regex
 import Tuple2
+import Tuple4
 import Maybe.Extra
 
 
@@ -12,6 +13,14 @@ type alias XmlElement =
     {   tag : String
     ,   attributes : List XmlParser.Attribute
     ,   children : List XmlParser.Node
+    }
+
+type alias VisualPolygon =
+    {   points : List Point2d
+    ,   fill : Maybe String
+    ,   fillOpacity : Maybe String
+    ,   stroke : Maybe String
+    ,   strokeWidth : Maybe String
     }
 
 
@@ -83,17 +92,23 @@ getOffsetFromSvgTransform transform =
 2018-07-23 Example of polygon in xml element from Gravit Designer:
 <path d=" M 4583.5 4966 L 4663.5 5005 L 4654.5 5133 L 4477.5 5121 L 4378.5 5136 L 4469.5 4975 L 4583.5 4966 Z " id="Kerdis East" fill="rgb(216,181,143)"/>
 -}
-getPolygonPointsAndColorFromXmlElement : XmlElement -> Result String (List Point2d, String)
-getPolygonPointsAndColorFromXmlElement xmlElement =
+getVisualPolygonFromXmlElement : XmlElement -> Result String VisualPolygon
+getVisualPolygonFromXmlElement xmlElement =
     case xmlElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing "d" of
     Nothing -> Err "No path data"
     Just pathData ->
         case pathData |> polygonPointsFromSvgPathData of
         Err pathDataParseError -> Err ("Failed to map path data to polygon: " ++ pathDataParseError)
         Ok polygonPoints ->
-            case xmlElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing "fill" of
-            Nothing -> Err "No fill attribute"
-            Just fill -> Ok (polygonPoints, fill)
+            let
+                (fill, fillOpacity, stroke, strokeWidth) =
+                    ("fill","fill-opacity","stroke","stroke-width")
+                    |> Tuple4.mapAll (\attributeName ->
+                        xmlElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing attributeName)
+            in
+                if (fill == Nothing) && (stroke == Nothing || strokeWidth == Nothing)
+                then Err "No fill and no stroke"
+                else Ok { points = polygonPoints, fill = fill, fillOpacity = fillOpacity, stroke = stroke, strokeWidth = strokeWidth }
 
 polygonPointsFromSvgPathData : String -> Result String (List Point2d)
 polygonPointsFromSvgPathData pathData =

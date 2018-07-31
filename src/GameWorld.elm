@@ -12,7 +12,7 @@ import Html.Attributes as HA
 import Pointer
 import Svg
 import Svg.Attributes as SA
-import ParseSvg
+import ParseSvg exposing (VisualPolygon)
 import MapRawXml
 import Parser
 import XmlParser
@@ -44,7 +44,7 @@ type alias EdgeDerivedProperties =
     }
 
 type alias GameWorldVisuals =
-    {   polygons : List (List Point2d, String)
+    {   polygons : List VisualPolygon
     }
 
 
@@ -178,9 +178,25 @@ viewNode worldState (nodeId, node) =
 viewVisuals : GameWorldVisuals -> Svg.Svg event
 viewVisuals visuals =
     visuals.polygons
-    |> List.map (Tuple.mapFirst (Visuals.svgPathDataFromPolylineListPoint Visuals.MoveTo))
-    |> List.map (\(pathData, color) -> Svg.path [ SA.d pathData, SA.fill color ] [])
+    |> List.map viewPolygon
     |> Svg.g []
+
+viewPolygon : VisualPolygon -> Svg.Svg event
+viewPolygon visualPolygon =
+    let
+        pathData = Visuals.svgPathDataFromPolylineListPoint Visuals.MoveTo visualPolygon.points
+        attributes =
+            [   ("d", Just pathData)
+            ,   ("fill", visualPolygon.fill)
+            ,   ("fill-opacity", visualPolygon.fillOpacity)
+            ,   ("stroke", visualPolygon.stroke)
+            ,   ("stroke-width", visualPolygon.strokeWidth)
+            ]
+            |> List.filterMap (\(attributeName, maybeAttributeValue) ->
+                maybeAttributeValue
+                |> Maybe.map (\attributeValue -> HA.attribute attributeName attributeValue))
+    in
+        Svg.path attributes []
 
 getEdgeDerivedProperties : Dict.Dict NodeId Node -> EdgeDirection -> Maybe EdgeDerivedProperties
 getEdgeDerivedProperties nodes (origNodeId, destNodeId) =
@@ -227,7 +243,7 @@ parseMapXml mapXml =
         parsePathsResults =
             allXmlElements
             |> List.filter (\element -> element.tag == "path")
-            |> List.map ParseSvg.getPolygonPointsAndColorFromXmlElement
+            |> List.map ParseSvg.getVisualPolygonFromXmlElement
 
         polygons =
             parsePathsResults
