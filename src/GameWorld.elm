@@ -16,7 +16,7 @@ import ParseSvg exposing (VisualPolygon)
 import MapRawXml
 import Parser
 import XmlParser
-import Maybe.Extra
+import Result.Extra
 import Tuple2
 
 
@@ -246,10 +246,8 @@ parseMapXml mapXml =
             |> List.map ParseSvg.getVisualPolygonFromXmlElement
 
         polygons =
-            parsePathsResults
-            |> List.map Result.toMaybe
-            |> Maybe.Extra.combine
-            |> Maybe.withDefault []
+            (Debug.log "parsePathsResults" (parsePathsResults |> Result.Extra.combine))
+            |> Result.withDefault []
     in
         (accessNodes, { polygons = polygons })
 

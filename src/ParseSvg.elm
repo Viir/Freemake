@@ -91,6 +91,9 @@ getOffsetFromSvgTransform transform =
 {-
 2018-07-23 Example of polygon in xml element from Gravit Designer:
 <path d=" M 4583.5 4966 L 4663.5 5005 L 4654.5 5133 L 4477.5 5121 L 4378.5 5136 L 4469.5 4975 L 4583.5 4966 Z " id="Kerdis East" fill="rgb(216,181,143)"/>
+
+2018-08-01 Example of polygon in xml element from Gravit Designer:
+<path d=" M -1523 -171 L -154.484 -171 L -246.744 -1185 L -1343.607 -1185 L -1523 -171 Z " id="Mentoran-Cave-Base" fill="rgb(47,47,47)"/>
 -}
 getVisualPolygonFromXmlElement : XmlElement -> Result String VisualPolygon
 getVisualPolygonFromXmlElement xmlElement =
@@ -112,7 +115,7 @@ getVisualPolygonFromXmlElement xmlElement =
 
 polygonPointsFromSvgPathData : String -> Result String (List Point2d)
 polygonPointsFromSvgPathData pathData =
-    case Regex.find Regex.All (Regex.regex "^\\s*M([\\s\\d\\.L]+)Z\\s*$") pathData of
+    case Regex.find Regex.All (Regex.regex "^\\s*M([\\-\\s\\d\\.L]+)Z\\s*$") pathData of
     [ polygonMatch ] ->
         case polygonMatch.submatches |> List.head of
         Just (Just pointsString) ->
@@ -127,5 +130,5 @@ polygonPointsFromSvgPathData pathData =
             |> Maybe.Extra.combine
             |> Result.fromMaybe "Failed to parse points"
         _ -> Err "No submatch in polygonMatch"
-    _ -> Err "Does not match overall polygon path"
+    _ -> Err ("Path data Does not match overall polygon path: " ++ pathData)
 
