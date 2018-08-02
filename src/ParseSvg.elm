@@ -31,16 +31,6 @@ xmlListSelfAndDescendantsNodesDepthFirst parent =
     XmlParser.Element _ _ children ->
         [ parent ] ++ (children |> List.concatMap xmlListSelfAndDescendantsNodesDepthFirst)
 
-xmlNodeAsElement : XmlParser.Node -> Maybe XmlElement
-xmlNodeAsElement node =
-    case node of
-    XmlParser.Text _ -> Nothing
-    XmlParser.Element tag attributes children -> Just { tag = tag, attributes = attributes, children = children }
-
-xmlElementIsCircle : XmlElement -> Bool
-xmlElementIsCircle xmlElement =
-    (xmlElement.tag |> String.toLower) == "circle"
-
 {-
 2018-07-23 Example of circle from Gravit Designer:
 <circle vector-effect="non-scaling-stroke" cx="0" cy="0" r="1" transform="matrix(5,0,0,5,5124.5,5115)" id="Node" fill="rgb(192,192,192)" fill-opacity="0.8"/>
@@ -49,9 +39,7 @@ getCircleLocation : XmlElement -> Maybe Point2d
 getCircleLocation circleElement =
     let
         maybeOffsetFromTransform =
-            case circleElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing "transform" of
-            Nothing -> Just (Vector2d.fromComponents (0, 0))
-            Just transform -> transform |> getOffsetFromSvgTransform
+            circleElement |> offsetFromSvgElementTransformMatrix
 
         parseCxCyResult =
             ("cx", "cy")
@@ -72,6 +60,28 @@ getValueOfFirstAttributeWithMatchingNameIgnoringCasing attributeName xmlElement 
     xmlElement.attributes
     |> List.filter (\attribute -> (attribute.name |> String.toLower) == (attributeName |> String.toLower))
     |> List.head |> Maybe.map .value
+
+{-
+2018-08-01 Example from Gravit Designer:
+<g transform="matrix(1,0,0,1,5334,5017.105)">
+    <text transform="matrix(1,0,0,1,0,8.551)" id="Text" style="font-family:&quot;Open Sans&quot;;font-weight:400;font-size:8px;font-style:normal;fill:#000000;stroke:none;">place: mentoran-cave-entrance</text>
+</g>
+-}
+parseSvgTextWithLocation : XmlElement -> Maybe (String, Point2d)
+parseSvgTextWithLocation xmlElement =
+    case xmlElement |> offsetFromSvgElementTransformMatrix of
+    Nothing -> Nothing
+    Just transformOffset ->
+        case xmlElement.children |> List.filterMap xmlNodeAsElement |> List.filter xmlElementIsText of
+        [ singleTextElement ] ->
+            let
+                text =
+                    singleTextElement.children
+                    |> List.filterMap xmlNodeAsText
+                    |> String.concat
+            in
+                Just (text, transformOffset |> Vector2d.components |> Point2d.fromCoordinates)
+        _ -> Nothing
 
 getOffsetFromSvgTransform : String -> Maybe Vector2d
 getOffsetFromSvgTransform transform =
@@ -132,3 +142,28 @@ polygonPointsFromSvgPathData pathData =
         _ -> Err "No submatch in polygonMatch"
     _ -> Err ("Path data Does not match overall polygon path: " ++ pathData)
 
+offsetFromSvgElementTransformMatrix : XmlElement -> Maybe Vector2d
+offsetFromSvgElementTransformMatrix xmlElement =
+    case xmlElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing "transform" of
+    Nothing -> Just (Vector2d.fromComponents (0, 0))
+    Just transform -> transform |> getOffsetFromSvgTransform
+
+xmlElementIsCircle : XmlElement -> Bool
+xmlElementIsCircle xmlElement =
+    (xmlElement.tag |> String.toLower) == "circle"
+
+xmlElementIsText : XmlElement -> Bool
+xmlElementIsText xmlElement =
+    (xmlElement.tag |> String.toLower) == "text"
+
+xmlNodeAsElement : XmlParser.Node -> Maybe XmlElement
+xmlNodeAsElement node =
+    case node of
+    XmlParser.Text _ -> Nothing
+    XmlParser.Element tag attributes children -> Just { tag = tag, attributes = attributes, children = children }
+
+xmlNodeAsText : XmlParser.Node -> Maybe String
+xmlNodeAsText node =
+    case node of
+    XmlParser.Text text -> Just text
+    XmlParser.Element tag attributes children -> Nothing

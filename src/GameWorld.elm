@@ -18,6 +18,7 @@ import Parser
 import XmlParser
 import Result.Extra
 import Tuple2
+import Regex
 
 
 type Location = OnNode NodeId
@@ -26,7 +27,10 @@ type alias NodeId = Int
 
 type alias Node =
     {   visualLocation : Point2d
+    ,   properties : List LocalProperty
     }
+
+type LocalProperty = MentoranCaveEntrance | MentoranCaveExit
 
 type alias State =
     {   playerLocation : Location
@@ -50,7 +54,7 @@ type alias GameWorldVisuals =
 
 initNodes : Dict.Dict NodeId Node
 initNodes =
-    initMap |> Result.map Tuple.first |> Result.withDefault []
+    initMap |> Result.map .nodes |> Result.withDefault []
     |> List.indexedMap (\i node -> (i, node))
     |> Dict.fromList
 
@@ -75,18 +79,43 @@ init =
     {   playerLocation = OnNode (initNodes |> Dict.keys |> List.head |> Maybe.withDefault 0)
     ,   nodes = initNodes
     ,   edges = initEdges initNodes
-    ,   visuals = initMap |> Result.map Tuple.second |> Result.withDefault { polygons = [] }
+    ,   visuals = initMap |> Result.map .visuals |> Result.withDefault { polygons = [] }
     }
 
 updateForPlayerInput : FromPlayerInput -> State -> State
 updateForPlayerInput playerInput stateBefore =
     case playerInput of
     MoveToNode destNodeId ->
-        case stateBefore.playerLocation of
-        OnNode beforeLocationNodeId ->
+        case (stateBefore.playerLocation, stateBefore.nodes |> Dict.get destNodeId) of
+        (OnNode beforeLocationNodeId, Just destNode) ->
             if stateBefore.edges |> Set.member (beforeLocationNodeId, destNodeId)
-            then { stateBefore | playerLocation = OnNode destNodeId }
+            then { stateBefore | playerLocation = OnNode destNodeId } |> updateForPlayerArrivalAtNode (destNodeId, destNode)
             else stateBefore
+        _ -> stateBefore
+
+updateForPlayerArrivalAtNode : (NodeId, Node) -> State -> State
+updateForPlayerArrivalAtNode (nodeId, node) stateBefore =
+    node.properties |> List.map updateForPlayerArrivalAtLocalProperty
+    |> List.foldl (\effect intermediate -> intermediate |> effect) stateBefore
+
+updateForPlayerArrivalAtLocalProperty : LocalProperty -> State -> State
+updateForPlayerArrivalAtLocalProperty property =
+    case property of
+    MentoranCaveEntrance -> movePlayerToNodeContainingProperty MentoranCaveExit
+    MentoranCaveExit -> movePlayerToNodeContainingProperty MentoranCaveEntrance
+
+movePlayerToNodeContainingProperty : LocalProperty -> State -> State
+movePlayerToNodeContainingProperty destProperty stateBefore =
+    let
+        newPlayerLocation =
+            stateBefore.nodes
+            |> Dict.toList
+            |> List.filter (Tuple.second >> .properties >> (List.member destProperty))
+            |> List.map Tuple.first
+            |> List.head
+            |> Maybe.map OnNode
+    in
+        { stateBefore | playerLocation = newPlayerLocation |> Maybe.withDefault stateBefore.playerLocation }
 
 view : State -> Svg.Svg FromPlayerInput
 view state =
@@ -224,32 +253,74 @@ svgCircleFromRadiusAndFillAndStroke (radius, fill) maybeStrokeWidthAndColor =
     in
         Svg.circle ([SA.r (radius |> toString), SA.fill fill] ++ strokeAttributes) []
 
-initMap : Result Parser.Error (List Node, GameWorldVisuals)
+initMap : Result Parser.Error { nodes : List Node, visuals : GameWorldVisuals }
 initMap =
     MapRawXml.xml |> XmlParser.parse |> Result.map parseMapXml
 
-parseMapXml : XmlParser.Xml -> (List Node, GameWorldVisuals)
+parseMapXml : XmlParser.Xml -> { nodes : List Node, visuals : GameWorldVisuals }
 parseMapXml mapXml =
     let
         allXmlElements =
             mapXml.root |> ParseSvg.xmlListSelfAndDescendantsNodesDepthFirst |> List.filterMap ParseSvg.xmlNodeAsElement
 
-        accessNodes : List Node
-        accessNodes =
+        accessNodesLocations =
             allXmlElements |> List.filter ParseSvg.xmlElementIsCircle
             |> List.filterMap ParseSvg.getCircleLocation
-            |> List.map (\location -> { visualLocation = location })
 
         parsePathsResults =
             allXmlElements
             |> List.filter (\element -> element.tag == "path")
             |> List.map ParseSvg.getVisualPolygonFromXmlElement
 
+        textsWithLocation =
+            allXmlElements
+            |> List.filterMap ParseSvg.parseSvgTextWithLocation
+
+        placesWithLocationsMappedToNodeLocations =
+            textsWithLocation
+            |> List.filterMap (\(text, textLocation) ->
+                case text |> parseLocalPropertyFromText of
+                Err _ -> Nothing
+                Ok place ->
+                    case accessNodesLocations |> List.sortBy (textLocation |> Point2d.distanceFrom) |> List.head of
+                    Nothing -> Nothing
+                    Just nodeLocation -> Just (nodeLocation, place))
+
+        nodes : List Node
+        nodes =
+            accessNodesLocations
+            |> List.map (\nodeLocation ->
+                let
+                    nodeProperties =
+                        placesWithLocationsMappedToNodeLocations
+                        |> List.filter (Tuple.first >> ((==) nodeLocation))
+                        |> List.map Tuple.second
+                in
+                    { visualLocation = nodeLocation, properties = nodeProperties })
+
         polygons =
             (Debug.log "parsePathsResults" (parsePathsResults |> Result.Extra.combine))
             |> Result.withDefault []
     in
-        (accessNodes, { polygons = polygons })
+        { nodes = nodes, visuals = { polygons = polygons } }
+
+placePropertyFromIdInMapFile : Dict.Dict String LocalProperty
+placePropertyFromIdInMapFile =
+    [   ("mentoran-cave-entrance", MentoranCaveEntrance)
+    ,   ("mentoran-cave-exit", MentoranCaveExit)
+    ] |> Dict.fromList
+
+parseLocalPropertyFromText : String -> Result String LocalProperty
+parseLocalPropertyFromText text =
+    case Regex.find Regex.All (Regex.regex "^place\\:\\s*([^\\s]+\\s*)$") text of
+    [ placeMatch ] ->
+        case placeMatch.submatches |> List.head of
+        Just (Just placeId) ->
+            case placePropertyFromIdInMapFile |> Dict.get placeId of
+            Nothing -> Err ("Unknown place id: " ++ placeId)
+            Just place -> Ok place
+        _ -> Err "Pattern error."
+    _ -> Err ("Text did not match place pattern: " ++ text)
 
 removeLongerIntersectingEdges : Dict.Dict NodeId Node -> Set.Set EdgeDirection -> Set.Set EdgeDirection
 removeLongerIntersectingEdges nodes edges =
