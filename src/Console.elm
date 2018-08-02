@@ -59,6 +59,9 @@ updateAnimateCamera progressAmountMilli consoleBefore =
 animateCameraStepSizeMax : Int
 animateCameraStepSizeMax = 5
 
+cameraTransitionPanningDistanceThreshold : Float
+cameraTransitionPanningDistanceThreshold = 1000
+
 updateAnimateCameraSingleStep : Int -> State -> State
 updateAnimateCameraSingleStep progressAmountMilli consoleBefore =
   if progressAmountMilli < 1
@@ -69,16 +72,25 @@ updateAnimateCameraSingleStep progressAmountMilli consoleBefore =
 
       progressSeconds = (progressAmountMilli |> toFloat) * 1e-3
 
-      cameraVelocityAcceleratedToDestination =
-        { offset = consoleBefore.cameraOffset, velocity = consoleBefore.cameraVelocity }
-        |> accelerateCameraTowardsOffset (progressSeconds * 3) cameraDestinationOffset
-        |> .velocity
+      distanceToPan = cameraDestinationOffset |> Vector2d.difference consoleBefore.cameraOffset |> Vector2d.length
 
-      dampFactor = 0.9 ^ (progressSeconds * 30) 
+      (cameraOffset, cameraVelocity) =
+        if not (distanceToPan <= cameraTransitionPanningDistanceThreshold)
+        then (cameraDestinationOffset, Vector2d.zero)
+        else
+          let
+            cameraVelocityAcceleratedToDestination =
+              { offset = consoleBefore.cameraOffset, velocity = consoleBefore.cameraVelocity }
+              |> accelerateCameraTowardsOffset (progressSeconds * 3) cameraDestinationOffset
+              |> .velocity
 
-      cameraVelocity = cameraVelocityAcceleratedToDestination |> Vector2d.scaleBy dampFactor
+            dampFactor = 0.9 ^ (progressSeconds * 30) 
 
-      cameraOffset = cameraVelocity |> Vector2d.scaleBy progressSeconds |> Vector2d.sum consoleBefore.cameraOffset
+            cameraVelocity = cameraVelocityAcceleratedToDestination |> Vector2d.scaleBy dampFactor
+
+            cameraOffset = cameraVelocity |> Vector2d.scaleBy progressSeconds |> Vector2d.sum consoleBefore.cameraOffset
+          in
+            (cameraOffset, cameraVelocity)
     in
       { consoleBefore | cameraOffset = cameraOffset, cameraVelocity = cameraVelocity }
 
