@@ -54,7 +54,7 @@ view state =
             |> Visuals.svgViewBoxFromBoundingBox
 
         gameWorldSvg =
-            [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput |> Console.applyCameraTransformToSvg state.console ]
+            [ state.gameWorld |> GameWorld.view |> Html.map PlayerInput |> Console.applyCameraToSvg state.console ]
             |> Svg.svg [ SA.viewBox viewbox, HA.style [("width","100%"),("height","96vh")]]
     in
         [ gameWorldSvg, productVersionOverlay ]
