@@ -6,11 +6,15 @@ import BoundingBox2d exposing (BoundingBox2d)
 import Svg
 import Svg.Attributes as SA
 import Tuple2
+import Html
+import Html.Attributes as HA
 
 
 type SvgPathConnectionFromPreviousElement = MoveTo | LineTo
 
 type alias Float2 = (Float, Float)
+
+type alias HtmlStyle = List (String, String)
 
 
 cssFontFamily : String
@@ -55,3 +59,7 @@ svgViewBoxFromBoundingBox boundingBox =
   |> List.concatMap Tuple2.toList
   |> List.map toString
   |> String.join " "
+
+button : List (Html.Attribute event) -> List (Html.Html event) -> Html.Html event
+button attributes =
+  Html.button (attributes ++ [ HA.style [("cursor","pointer")] ])

@@ -1,4 +1,4 @@
-module GameWorld exposing (Node, State, Location(..), FromPlayerInput, init, updateForPlayerInput, view)
+module GameWorld exposing (Node, State, Location(..), FromPlayerInput, init, updateForPlayerInput, viewWorld, viewLocationSpecific)
 
 import Visuals
 import Point2d exposing (Point2d)
@@ -32,6 +32,12 @@ type alias Node =
 
 type LocalProperty = MentoranCaveEntrance | MentoranCaveExit
 
+type alias ActionOfferedToUser =
+    {   context : String
+    ,   triggerLabel : String
+    ,   effect : State -> State
+    }
+
 type alias State =
     {   playerLocation : Location
     ,   nodes : Dict.Dict NodeId Node
@@ -41,7 +47,9 @@ type alias State =
 
 type alias EdgeDirection = (NodeId, NodeId)
 
-type FromPlayerInput = MoveToNode NodeId
+type FromPlayerInput
+    = MoveToNode NodeId
+    | ActLocal String
 
 type alias EdgeDerivedProperties =
     {   lineSegmentBetweenNodes : LineSegment2d
@@ -51,6 +59,22 @@ type alias GameWorldVisuals =
     {   polygons : List VisualPolygon
     }
 
+
+offeredCoursesOfActionForLocalProperty : LocalProperty -> List ActionOfferedToUser
+offeredCoursesOfActionForLocalProperty localProperty =
+    case localProperty of
+    MentoranCaveEntrance ->
+        [
+            {   context = "On a rock face, you see a particularly dark shadow. It looks like a hole in the rock."
+            ,   triggerLabel = "Enter The Hole"
+            ,   effect = movePlayerToNodeContainingProperty MentoranCaveExit}
+        ]
+    MentoranCaveExit ->
+        [
+            {   context = "There is an opening into a narrow passage. Bright light is coming from the other side."
+            ,   triggerLabel = "Step Into The Light"
+            ,   effect = movePlayerToNodeContainingProperty MentoranCaveEntrance}
+        ]
 
 initNodes : Dict.Dict NodeId Node
 initNodes =
@@ -86,23 +110,29 @@ updateForPlayerInput : FromPlayerInput -> State -> State
 updateForPlayerInput playerInput stateBefore =
     case playerInput of
     MoveToNode destNodeId ->
-        case (stateBefore.playerLocation, stateBefore.nodes |> Dict.get destNodeId) of
-        (OnNode beforeLocationNodeId, Just destNode) ->
+        case stateBefore.playerLocation of
+        OnNode beforeLocationNodeId ->
             if stateBefore.edges |> Set.member (beforeLocationNodeId, destNodeId)
-            then { stateBefore | playerLocation = OnNode destNodeId } |> updateForPlayerArrivalAtNode (destNodeId, destNode)
+            then { stateBefore | playerLocation = OnNode destNodeId }
             else stateBefore
-        _ -> stateBefore
+    ActLocal triggerLabel ->
+        (stateBefore |> localActionsToOffer
+        |> List.filter (.triggerLabel >> ((==) triggerLabel))
+        |> List.head
+        |> Maybe.map .effect
+        |> Maybe.withDefault identity)
+        <| stateBefore
 
-updateForPlayerArrivalAtNode : (NodeId, Node) -> State -> State
-updateForPlayerArrivalAtNode (nodeId, node) stateBefore =
-    node.properties |> List.map updateForPlayerArrivalAtLocalProperty
-    |> List.foldl (\effect intermediate -> intermediate |> effect) stateBefore
+playerLocationNode : State -> Maybe Node
+playerLocationNode state =
+    case state.playerLocation of
+    OnNode nodeId -> state.nodes |> Dict.get nodeId
 
-updateForPlayerArrivalAtLocalProperty : LocalProperty -> State -> State
-updateForPlayerArrivalAtLocalProperty property =
-    case property of
-    MentoranCaveEntrance -> movePlayerToNodeContainingProperty MentoranCaveExit
-    MentoranCaveExit -> movePlayerToNodeContainingProperty MentoranCaveEntrance
+localActionsToOffer : State -> List ActionOfferedToUser
+localActionsToOffer state =
+    state |> playerLocationNode
+    |> Maybe.map (.properties >> List.concatMap offeredCoursesOfActionForLocalProperty)
+    |> Maybe.withDefault []
 
 movePlayerToNodeContainingProperty : LocalProperty -> State -> State
 movePlayerToNodeContainingProperty destProperty stateBefore =
@@ -117,8 +147,8 @@ movePlayerToNodeContainingProperty destProperty stateBefore =
     in
         { stateBefore | playerLocation = newPlayerLocation |> Maybe.withDefault stateBefore.playerLocation }
 
-view : State -> Svg.Svg FromPlayerInput
-view state =
+viewWorld : State -> Svg.Svg FromPlayerInput
+viewWorld state =
     let
         nodesView = state.nodes |> Dict.toList |> List.map (viewNode state) |> Svg.g []
         edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g [ SA.opacity "0.5" ]
@@ -127,6 +157,26 @@ view state =
         ,   edgesView
         ,   nodesView
         ] |> Svg.g []
+
+viewActionOffer : ActionOfferedToUser -> Html.Html FromPlayerInput
+viewActionOffer interaction =
+    let
+        context =
+            if 0 < (interaction.context |> String.length)
+            then [ interaction.context |> Html.text ] |> Html.div []
+            else Html.text ""
+
+        trigger =
+            [ interaction.triggerLabel |> Html.text ]
+            |> Visuals.button [ HA.style [("margin","4px")], Pointer.onDown (always (ActLocal interaction.triggerLabel)) ]
+    in
+        [ context, trigger ] |> Html.div []
+
+viewLocationSpecific : State -> Html.Html FromPlayerInput
+viewLocationSpecific state =
+    state |> localActionsToOffer
+    |> List.map viewActionOffer
+    |> Html.div []
 
 edgeViewWidth : Float
 edgeViewWidth = 2

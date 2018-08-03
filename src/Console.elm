@@ -1,4 +1,4 @@
-module Console exposing (State, init, updateForChangedGame, updateForTimeProgress, applyCameraToSvg)
+module Console exposing (State, init, updateForChangedGame, updateForTimeProgress, applyCameraTransformToSvg)
 
 import GameWorld
 import Visuals
@@ -27,19 +27,10 @@ init game =
   , cameraFadeOut = 0
   }
 
-applyCameraToSvg : State -> Svg.Svg event -> Svg.Svg event
-applyCameraToSvg state viewedSvg =
-  let
-    fadeOutVisual =
-      if 0 < state.cameraFadeOut
-      then Svg.rect [ SA.x "-1000", SA.y "-1000", SA.width "2000", SA.height "2000", SA.fill "black", SA.opacity (state.cameraFadeOut |> toString)] []
-      else Svg.text ""
-
-    offsetViewedSvg =
-      [ viewedSvg ]
-      |> Svg.g [ SA.transform (Visuals.svgTransformTranslate (state.cameraOffset |> Vector2d.components |> Tuple2.mapBoth negate)) ]
-  in
-    [ offsetViewedSvg, fadeOutVisual ] |> Svg.g []
+applyCameraTransformToSvg : State -> Svg.Svg event -> Svg.Svg event
+applyCameraTransformToSvg state viewedSvg =
+  [ viewedSvg ]
+  |> Svg.g [ SA.transform (Visuals.svgTransformTranslate (state.cameraOffset |> Vector2d.components |> Tuple2.mapBoth negate)) ]
 
 defaultCameraOffsetFromGame : GameWorld.State -> Maybe Vector2d
 defaultCameraOffsetFromGame game =
