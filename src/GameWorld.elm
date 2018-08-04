@@ -30,7 +30,7 @@ type alias Node =
     ,   properties : List LocalProperty
     }
 
-type LocalProperty = MentoranCaveEntrance | MentoranCaveExit
+type LocalProperty = PlayerStart | MentoranCaveEntrance | MentoranCaveExit
 
 type alias ActionOfferedToUser =
     {   context : String
@@ -63,6 +63,7 @@ type alias GameWorldVisuals =
 offeredCoursesOfActionForLocalProperty : LocalProperty -> List ActionOfferedToUser
 offeredCoursesOfActionForLocalProperty localProperty =
     case localProperty of
+    PlayerStart -> []
     MentoranCaveEntrance ->
         [
             {   context = "On a rock face, you see a particularly dark shadow. It looks like a hole in the rock."
@@ -104,7 +105,7 @@ init =
     ,   nodes = initNodes
     ,   edges = initEdges initNodes
     ,   visuals = initMap |> Result.map .visuals |> Result.withDefault { polygons = [] }
-    }
+    } |> movePlayerToNodeContainingProperty PlayerStart
 
 updateForPlayerInput : FromPlayerInput -> State -> State
 updateForPlayerInput playerInput stateBefore =
@@ -151,7 +152,7 @@ viewWorld : State -> Svg.Svg FromPlayerInput
 viewWorld state =
     let
         nodesView = state.nodes |> Dict.toList |> List.map (viewNode state) |> Svg.g []
-        edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g [ SA.opacity "0.5" ]
+        edgesView = state.edges |> Set.toList |> List.map (viewEdge state) |> Svg.g [ SA.opacity "0.3" ]
     in
         [   state.visuals |> viewVisuals
         ,   edgesView
@@ -356,7 +357,8 @@ parseMapXml mapXml =
 
 placePropertyFromIdInMapFile : Dict.Dict String LocalProperty
 placePropertyFromIdInMapFile =
-    [   ("mentoran-cave-entrance", MentoranCaveEntrance)
+    [   ("player-start", PlayerStart)
+    ,   ("mentoran-cave-entrance", MentoranCaveEntrance)
     ,   ("mentoran-cave-exit", MentoranCaveExit)
     ] |> Dict.fromList
 

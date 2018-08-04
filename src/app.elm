@@ -86,4 +86,4 @@ productVersionOverlay =
     |> Html.div [ HA.style [("position","absolute"),("top","0px"),("right","0px"),("margin","5px")]]
 
 productVersion : String
-productVersion = "2018-08-03"
+productVersion = "2018-08-04"
