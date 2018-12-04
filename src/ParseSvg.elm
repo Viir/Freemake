@@ -11,11 +11,10 @@ module ParseSvg exposing
     , xmlNodeAsElement
     )
 
+import Common exposing (..)
 import Maybe.Extra
 import Point2d exposing (Point2d)
 import Regex
-import Tuple2
-import Tuple4
 import Vector2d exposing (Vector2d)
 import XmlParser
 
@@ -61,16 +60,16 @@ getCircleLocation circleElement =
 
         parseCxCyResult =
             ( "cx", "cy" )
-                |> Tuple2.mapBoth
+                |> tuple2MapAll
                     (\attributeName ->
                         circleElement
                             |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing attributeName
                             |> Maybe.map String.toFloat
-                            |> Maybe.withDefault (Ok 0)
+                            |> Maybe.withDefault (Just 0)
                     )
     in
     case parseCxCyResult of
-        ( Ok cx, Ok cy ) ->
+        ( Just cx, Just cy ) ->
             case maybeOffsetFromTransform of
                 Just offsetFromTransform ->
                     Just (Point2d.fromCoordinates ( cx, cy ) |> Point2d.translateBy offsetFromTransform)
@@ -122,14 +121,14 @@ parseSvgTextWithLocation xmlElement =
 
 getOffsetFromSvgTransform : String -> Maybe Vector2d
 getOffsetFromSvgTransform transform =
-    case Regex.find Regex.All (Regex.regex "^matrix\\((.+)\\)$") transform of
+    case Regex.find ("^matrix\\((.+)\\)$" |> Regex.fromString |> Maybe.withDefault Regex.never) transform of
         [ matrixMatch ] ->
             case matrixMatch.submatches |> List.head of
                 Just (Just matrixComponents) ->
                     case matrixComponents |> String.split "," of
-                        [ _, _, _, _, offsetX, offsetY ] ->
-                            case ( offsetX |> String.toFloat, offsetY |> String.toFloat ) of
-                                ( Ok offsetX, Ok offsetY ) ->
+                        [ _, _, _, _, offsetXString, offsetYString ] ->
+                            case ( offsetXString, offsetYString ) |> tuple2MapAll String.toFloat of
+                                ( Just offsetX, Just offsetY ) ->
                                     Just (Vector2d.fromComponents ( offsetX, offsetY ))
 
                                 _ ->
@@ -168,11 +167,13 @@ getVisualPolygonFromXmlElement xmlElement =
 
                 Ok polygonPoints ->
                     let
-                        ( fill, fillOpacity, stroke, strokeWidth ) =
-                            ( "fill", "fill-opacity", "stroke", "stroke-width" )
-                                |> Tuple4.mapAll
-                                    (\attributeName ->
-                                        xmlElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing attributeName
+                        ( ( fill, fillOpacity ), ( stroke, strokeWidth ) ) =
+                            ( ( "fill", "fill-opacity" ), ( "stroke", "stroke-width" ) )
+                                |> tuple2MapAll
+                                    (tuple2MapAll
+                                        (\attributeName ->
+                                            xmlElement |> getValueOfFirstAttributeWithMatchingNameIgnoringCasing attributeName
+                                        )
                                     )
                     in
                     if (fill == Nothing) && (stroke == Nothing || strokeWidth == Nothing) then
@@ -184,7 +185,7 @@ getVisualPolygonFromXmlElement xmlElement =
 
 polygonPointsFromSvgPathData : String -> Result String (List Point2d)
 polygonPointsFromSvgPathData pathData =
-    case Regex.find Regex.All (Regex.regex "^\\s*M([\\-\\s\\d\\.L]+)Z\\s*$") pathData of
+    case Regex.find ("^\\s*M([\\-\\s\\d\\.L]+)Z\\s*$" |> Regex.fromString |> Maybe.withDefault Regex.never) pathData of
         [ polygonMatch ] ->
             case polygonMatch.submatches |> List.head of
                 Just (Just pointsString) ->
@@ -195,7 +196,7 @@ polygonPointsFromSvgPathData pathData =
                                 case pointString |> String.trim |> String.split " " of
                                     [ xString, yString ] ->
                                         case ( xString |> String.toFloat, yString |> String.toFloat ) of
-                                            ( Ok x, Ok y ) ->
+                                            ( Just x, Just y ) ->
                                                 Just (Point2d.fromCoordinates ( x, y ))
 
                                             _ ->

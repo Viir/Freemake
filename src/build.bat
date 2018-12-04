@@ -1,4 +1,4 @@
-ECHO depending on elm-make program from https://github.com/elm-lang/elm-make
+ECHO depending on Elm compiler program from https://github.com/elm/compiler/releases/tag/0.19.0
 
-elm-make app.elm --output=.\..\out\freemake.html
+elm19 make main.elm --output=.\..\out\freemake.html
 

@@ -6,7 +6,6 @@ import GameWorld
 import Point2d exposing (Point2d)
 import Svg
 import Svg.Attributes as SA
-import Tuple2
 import Vector2d exposing (Vector2d)
 import Visuals
 
@@ -31,7 +30,7 @@ init game =
 applyCameraTransformToSvg : State -> Svg.Svg event -> Svg.Svg event
 applyCameraTransformToSvg state viewedSvg =
     [ viewedSvg ]
-        |> Svg.g [ SA.transform (Visuals.svgTransformTranslate (state.cameraOffset |> Vector2d.components |> Tuple2.mapBoth negate)) ]
+        |> Svg.g [ SA.transform (Visuals.svgTransformTranslate (state.cameraOffset |> Vector2d.components |> tuple2MapAll negate)) ]
 
 
 defaultCameraOffsetFromGame : GameWorld.State -> Maybe Vector2d
@@ -61,7 +60,7 @@ updateAnimateCamera progressAmountMilli consoleBefore =
     let
         stepSizes =
             (animateCameraStepSizeMax |> List.repeat (progressAmountMilli // animateCameraStepSizeMax))
-                ++ [ progressAmountMilli % animateCameraStepSizeMax ]
+                ++ [ progressAmountMilli |> remainderBy animateCameraStepSizeMax ]
     in
     consoleBefore
         |> withListTransformApplied (stepSizes |> List.map updateAnimateCameraSingleStep)

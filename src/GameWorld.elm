@@ -1,15 +1,17 @@
 module GameWorld exposing (FromPlayerInput, Location(..), Node, State, init, updateForPlayerInput, viewLocationSpecific, viewWorld)
 
+import Common exposing (..)
 import Dict
 import Direction2d exposing (Direction2d)
 import Html
 import Html.Attributes as HA
+import Html.Events.Extra.Pointer as Pointer
 import LineSegment2d exposing (LineSegment2d)
 import MapRawXml
 import ParseSvg exposing (VisualPolygon)
 import Parser
+import Parser.Advanced
 import Point2d exposing (Point2d)
-import Pointer
 import Regex
 import Result.Extra
 import Set
@@ -218,7 +220,7 @@ viewActionOffer interaction =
 
         trigger =
             [ interaction.triggerLabel |> Html.text ]
-                |> Visuals.button [ HA.style [ ( "margin", "4px" ) ], Pointer.onDown (always (ActLocal interaction.triggerLabel)) ]
+                |> Visuals.button [ HA.style "margin" "4px", Pointer.onDown (always (ActLocal interaction.triggerLabel)) ]
     in
     [ context, trigger ] |> Html.div []
 
@@ -331,7 +333,7 @@ viewNode worldState ( nodeId, node ) =
         inputAttributes =
             [ Pointer.onDown (always pointerDownEvent) ]
                 ++ (if indicateEffectForInput then
-                        [ HA.style [ ( "cursor", "pointer" ) ] ]
+                        [ HA.style "cursor" "pointer" ]
 
                     else
                         []
@@ -341,7 +343,7 @@ viewNode worldState ( nodeId, node ) =
             svgCircleFromRadiusAndFillAndStroke ( nodeViewRadius * 4, "transparent" ) Nothing
     in
     [ additionalInputArea, nodeBaseView, playerView ]
-        |> Svg.g (inputAttributes ++ [ transformAttribute, SA.opacity (opacity |> toString) ])
+        |> Svg.g (inputAttributes ++ [ transformAttribute, SA.opacity (opacity |> String.fromFloat) ])
 
 
 viewVisuals : GameWorldVisuals -> Svg.Svg event
@@ -399,13 +401,13 @@ svgCircleFromRadiusAndFillAndStroke ( radius, fill ) maybeStrokeWidthAndColor =
     let
         strokeAttributes =
             maybeStrokeWidthAndColor
-                |> Maybe.map (\( strokeWidth, strokeColor ) -> [ SA.stroke strokeColor, SA.strokeWidth (strokeWidth |> toString) ])
+                |> Maybe.map (\( strokeWidth, strokeColor ) -> [ SA.stroke strokeColor, SA.strokeWidth (strokeWidth |> String.fromFloat) ])
                 |> Maybe.withDefault []
     in
-    Svg.circle ([ SA.r (radius |> toString), SA.fill fill ] ++ strokeAttributes) []
+    Svg.circle ([ SA.r (radius |> String.fromFloat), SA.fill fill ] ++ strokeAttributes) []
 
 
-initMap : Result Parser.Error { nodes : List Node, visuals : GameWorldVisuals }
+initMap : Result (List (Parser.Advanced.DeadEnd String Parser.Problem)) { nodes : List Node, visuals : GameWorldVisuals }
 initMap =
     MapRawXml.xml |> XmlParser.parse |> Result.map parseMapXml
 
@@ -479,7 +481,7 @@ placePropertyFromIdInMapFile =
 
 parseLocalPropertyFromText : String -> Result String LocalProperty
 parseLocalPropertyFromText text =
-    case Regex.find Regex.All (Regex.regex "^place\\:\\s*([^\\s]+\\s*)$") text of
+    case Regex.find ("^place\\:\\s*([^\\s]+\\s*)$" |> Regex.fromString |> Maybe.withDefault Regex.never) text of
         [ placeMatch ] ->
             case placeMatch.submatches |> List.head of
                 Just (Just placeId) ->
@@ -511,7 +513,7 @@ removeLongerIntersectingEdges nodes edges =
                 False
 
             else
-                case ( edgeA, edgeB ) |> Tuple2.mapBoth (lineSegmentFromEdge >> Maybe.map shortenLineSegment) of
+                case ( edgeA, edgeB ) |> tuple2MapAll (lineSegmentFromEdge >> Maybe.map shortenLineSegment) of
                     ( Just edgeALineSegment, Just edgeBLineSegment ) ->
                         LineSegment2d.intersectionPoint edgeALineSegment edgeBLineSegment /= Nothing
 

@@ -1,5 +1,6 @@
-import AnimationFrame
 import BoundingBox2d exposing (BoundingBox2d)
+import Browser
+import Browser.Events
 import Console
 import GameWorld
 import Html exposing (Html)
@@ -20,9 +21,9 @@ type Event
     | AnimationFrameDiff Float
 
 
-main : Program Never State Event
+main : Program () State Event
 main =
-    Html.program
+    Browser.document
         { init = init
         , view = view
         , update = update
@@ -30,8 +31,8 @@ main =
         }
 
 
-init : ( State, Cmd Event )
-init =
+init : () -> ( State, Cmd Event )
+init flags =
     ( { gameWorld = GameWorld.init, console = Console.init GameWorld.init }, Cmd.none )
 
 
@@ -54,10 +55,10 @@ update event stateBefore =
 
 subscriptions : State -> Sub Event
 subscriptions state =
-    AnimationFrame.diffs AnimationFrameDiff
+    Browser.Events.onAnimationFrameDelta AnimationFrameDiff
 
 
-view : State -> Html.Html Event
+view : State -> Browser.Document Event
 view state =
     let
         viewbox =
@@ -66,30 +67,34 @@ view state =
 
         gameWorldSvg =
             [ state.gameWorld |> GameWorld.viewWorld |> Html.map PlayerInput |> Console.applyCameraTransformToSvg state.console ]
-                |> Svg.svg [ SA.viewBox viewbox, HA.style [ ( "width", "100%" ), ( "height", "96vh" ) ] ]
+                |> Svg.svg [ SA.viewBox viewbox, HA.style "width" "100%", HA.style "height" "96vh" ]
 
         locationSpecific =
             [ state.gameWorld |> GameWorld.viewLocationSpecific |> Html.map PlayerInput ]
-                |> Html.div [ HA.style [ ( "margin", "10px" ) ] ]
+                |> Html.div [ HA.style "margin" "10px" ]
                 |> List.singleton
-                |> Html.div [ HA.style locationSpecificContainerStyle ]
+                |> Html.div locationSpecificContainerStyle
 
         gameViewStyles =
             if 0 < state.console.cameraFadeOut then
-                [ ( "filter", "brightness(" ++ (((1 - state.console.cameraFadeOut) |> toString) ++ ")") ) ]
+                [ HA.style "filter" ("brightness(" ++ (((1 - state.console.cameraFadeOut) |> String.fromFloat) ++ ")")) ]
 
             else
                 []
 
         gameView =
             [ gameWorldSvg, locationSpecific ]
-                |> Html.div [ HA.style gameViewStyles ]
+                |> Html.div gameViewStyles
     in
-    [ gameView, productVersionOverlay ]
-        |> Html.div [ HA.style [ ( "font-family", Visuals.cssFontFamily ), ( "color", "whitesmoke" ) ] ]
+    { body =
+        [ [ gameView, productVersionOverlay ]
+            |> Html.div [ HA.style "font-family" Visuals.cssFontFamily, HA.style "color" "whitesmoke" ]
+        ]
+    , title = "Freemake " ++ productVersion
+    }
 
 
-locationSpecificContainerStyle : HtmlStyle
+locationSpecificContainerStyle : HtmlStyle a
 locationSpecificContainerStyle =
     [ ( "position", "absolute" )
     , ( "top", "0px" )
@@ -98,14 +103,15 @@ locationSpecificContainerStyle =
     , ( "min-height", "10%" )
     , ( "background", "rgba(16,16,16,0.9)" )
     ]
+        |> Visuals.htmlStyleFromList
 
 
 productVersionOverlay : Html.Html e
 productVersionOverlay =
     [ ("Freemake v" ++ productVersion) |> Html.text ]
-        |> Html.div [ HA.style [ ( "position", "absolute" ), ( "top", "0px" ), ( "right", "0px" ), ( "margin", "5px" ) ] ]
+        |> Html.div (Visuals.htmlStyleFromList [ ( "position", "absolute" ), ( "top", "0px" ), ( "right", "0px" ), ( "margin", "5px" ) ])
 
 
 productVersion : String
 productVersion =
-    "2018-08-04"
+    "2018-12-04"
