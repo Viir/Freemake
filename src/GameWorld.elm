@@ -85,14 +85,14 @@ offeredCoursesOfActionForLocalProperty localProperty =
 
         MentoranCaveEntrance ->
             [ { context = "On a rock face, you see a particularly dark shadow. It looks like a hole in the rock."
-              , triggerLabel = "Enter The Hole"
+              , triggerLabel = "Enter the hole"
               , effect = movePlayerToNodeContainingProperty MentoranCaveExit
               }
             ]
 
         MentoranCaveExit ->
             [ { context = "There is an opening into a narrow passage. Bright light is coming from the other side."
-              , triggerLabel = "Step Into The Light"
+              , triggerLabel = "Step into the light"
               , effect = movePlayerToNodeContainingProperty MentoranCaveEntrance
               }
             ]

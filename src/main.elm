@@ -114,4 +114,4 @@ productVersionOverlay =
 
 productVersion : String
 productVersion =
-    "2018-12-04"
+    "2018-12-27"
