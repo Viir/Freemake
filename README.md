@@ -1,6 +1,6 @@
 # Freemake
 
-This repository contains information used to build the video game [Freemake](https://distilledgames.itch.io/freemake)
+This repository contains information used to build the video game [Freemake](https://gamelab-zone.itch.io/freemake)
 
 For background and project history, see the post at [A Remake of Freewar - Introducing Freemake](https://forum.distilled.games/t/a-remake-of-freewar-introducing-freemake/120)
 
