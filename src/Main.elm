@@ -1,9 +1,11 @@
-import BoundingBox2d exposing (BoundingBox2d)
+module Main exposing (main)
+
+import BoundingBox2d
 import Browser
 import Browser.Events
 import Console
 import GameWorld
-import Html exposing (Html)
+import Html
 import Html.Attributes as HA
 import Svg
 import Svg.Attributes as SA
@@ -114,4 +116,4 @@ productVersionOverlay =
 
 productVersion : String
 productVersion =
-    "2018-12-27"
+    "2020-01-01"

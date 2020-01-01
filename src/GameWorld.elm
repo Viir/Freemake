@@ -2,7 +2,7 @@ module GameWorld exposing (FromPlayerInput, Location(..), Node, State, init, upd
 
 import Common exposing (..)
 import Dict
-import Direction2d exposing (Direction2d)
+import Direction2d
 import Html
 import Html.Attributes as HA
 import Html.Events.Extra.Pointer as Pointer
@@ -18,7 +18,7 @@ import Set
 import Svg
 import Svg.Attributes as SA
 import Tuple2
-import Vector2d exposing (Vector2d)
+import Vector2d
 import Visuals
 import XmlParser
 
