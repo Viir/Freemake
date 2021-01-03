@@ -1,8 +1,14 @@
 # Freemake
 
-This repository contains information used to build the video game [Freemake](https://gamelab-zone.itch.io/freemake)
+This repository contains program code and resources to build the video game [Freemake](https://gamelab-zone.itch.io/freemake)
+
+![Screenshot of the Freemake game](./devlog/2021-01-03-freemake-game-screenshot.png)
 
 For background and project history, see the post at [A Remake of Freewar - Introducing Freemake](https://forum.distilled.games/t/a-remake-of-freewar-introducing-freemake/120)
+
+## Hacking
+
+The easiest way to make changes to the game is by opening it in the online editor at https://editor.elm-fullstack.org/?project-state=https%3A%2F%2Fgithub.com%2FViir%2FFreemake%2Ftree%2Fmaster%2Fsrc
 
 ## Backlog
 
