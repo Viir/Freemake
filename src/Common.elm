@@ -1,14 +1,4 @@
-module Common exposing (flip, tuple2MapAll, tuple2ToList, withListTransformApplied)
-
-
-withListTransformApplied : List (a -> a) -> a -> a
-withListTransformApplied listTransform original =
-    case listTransform |> List.head of
-        Just transform ->
-            withListTransformApplied (listTransform |> List.tail |> Maybe.withDefault []) (transform original)
-
-        Nothing ->
-            original
+module Common exposing (flip, tuple2MapAll, tuple2ToList)
 
 
 tuple2MapAll : (a -> b) -> ( a, a ) -> ( b, b )

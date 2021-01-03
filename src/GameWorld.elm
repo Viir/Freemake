@@ -1,6 +1,6 @@
 module GameWorld exposing (FromPlayerInput, Location(..), Node, State, init, updateForPlayerInput, viewLocationSpecific, viewWorld)
 
-import Common exposing (..)
+import Common
 import Dict
 import Direction2d
 import Html
@@ -513,7 +513,7 @@ removeLongerIntersectingEdges nodes edges =
                 False
 
             else
-                case ( edgeA, edgeB ) |> tuple2MapAll (lineSegmentFromEdge >> Maybe.map shortenLineSegment) of
+                case ( edgeA, edgeB ) |> Common.tuple2MapAll (lineSegmentFromEdge >> Maybe.map shortenLineSegment) of
                     ( Just edgeALineSegment, Just edgeBLineSegment ) ->
                         LineSegment2d.intersectionPoint edgeALineSegment edgeBLineSegment /= Nothing
 
@@ -528,8 +528,8 @@ removeLongerIntersectingEdges nodes edges =
                 |> List.indexedMap (\i edgeDirection -> ( edgeDirection, -i ))
                 |> Dict.fromList
 
-        priorityFromEdgeDirection =
-            (dictPriorityFromEdgeDirection |> (Dict.get |> flip)) >> Maybe.withDefault -1
+        priorityFromEdgeDirection edgeDirection =
+            dictPriorityFromEdgeDirection |> Dict.get edgeDirection |> Maybe.withDefault -1
     in
     edges
         |> Set.filter

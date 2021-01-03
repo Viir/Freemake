@@ -3,7 +3,7 @@ module Console exposing (State, applyCameraTransformToSvg, init, updateForChange
 import Common exposing (..)
 import Dict
 import GameWorld
-import Point2d exposing (Point2d)
+import Point2d
 import Svg
 import Svg.Attributes as SA
 import Vector2d exposing (Vector2d)
@@ -62,8 +62,9 @@ updateAnimateCamera progressAmountMilli consoleBefore =
             (animateCameraStepSizeMax |> List.repeat (progressAmountMilli // animateCameraStepSizeMax))
                 ++ [ progressAmountMilli |> remainderBy animateCameraStepSizeMax ]
     in
-    consoleBefore
-        |> withListTransformApplied (stepSizes |> List.map updateAnimateCameraSingleStep)
+    stepSizes
+        |> List.map updateAnimateCameraSingleStep
+        |> List.foldl (<|) consoleBefore
 
 
 animateCameraStepSizeMax : Int

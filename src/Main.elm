@@ -34,7 +34,7 @@ main =
 
 
 init : () -> ( State, Cmd Event )
-init flags =
+init _ =
     ( { gameWorld = GameWorld.init, console = Console.init GameWorld.init }, Cmd.none )
 
 
@@ -56,7 +56,7 @@ update event stateBefore =
 
 
 subscriptions : State -> Sub Event
-subscriptions state =
+subscriptions _ =
     Browser.Events.onAnimationFrameDelta AnimationFrameDiff
 
 
@@ -116,4 +116,4 @@ productVersionOverlay =
 
 productVersion : String
 productVersion =
-    "2020-01-01"
+    "2021-01-03"
