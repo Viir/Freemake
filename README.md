@@ -8,7 +8,7 @@ For background and project history, see the post at [A Remake of Freewar - Intro
 
 ## Hacking
 
-The easiest way to make changes to the game is by opening it in the online editor at https://editor.elm-fullstack.org/?project-state=https%3A%2F%2Fgithub.com%2FViir%2FFreemake%2Ftree%2Fmaster%2Fsrc
+The easiest way to make changes to the game is by opening it in the online editor at https://elm-editor.com/?project-state=https%3A%2F%2Fgithub.com%2FViir%2FFreemake%2Ftree%2Fmain%2Fsrc&file-path-to-open=Main.elm
 
 ## Backlog
 
