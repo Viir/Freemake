@@ -1,13 +1,13 @@
 module GameWorld exposing (FromPlayerInput, Location(..), Node, State, init, updateForPlayerInput, viewLocationSpecific, viewWorld)
 
 import Common
+import CompilationInterface.SourceFiles
 import Dict
 import Direction2d
 import Html
 import Html.Attributes as HA
 import Html.Events.Extra.Pointer as Pointer
 import LineSegment2d exposing (LineSegment2d)
-import MapRawXml
 import ParseSvg exposing (VisualPolygon)
 import Parser
 import Parser.Advanced
@@ -409,7 +409,7 @@ svgCircleFromRadiusAndFillAndStroke ( radius, fill ) maybeStrokeWidthAndColor =
 
 initMap : Result (List (Parser.Advanced.DeadEnd String Parser.Problem)) { nodes : List Node, visuals : GameWorldVisuals }
 initMap =
-    MapRawXml.xml |> XmlParser.parse |> Result.map parseMapXml
+    CompilationInterface.SourceFiles.file____map_svg.utf8 |> XmlParser.parse |> Result.map parseMapXml
 
 
 parseMapXml : XmlParser.Xml -> { nodes : List Node, visuals : GameWorldVisuals }

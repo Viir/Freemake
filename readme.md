@@ -8,7 +8,9 @@ For background and project history, see the post at [A Remake of Freewar - Intro
 
 ## Hacking
 
-The easiest way to make changes to the game is by opening it in the online editor at https://elm-editor.com/?project-state=https%3A%2F%2Fgithub.com%2FViir%2FFreemake%2Ftree%2Fmain%2Fimplement&file-path-to-open=Main.elm
+The easiest way to make changes to the game is by opening it in Elm Editor at https://elm-editor.com/?project-state=https%3A%2F%2Fgithub.com%2FViir%2FFreemake%2Ftree%2Fmain%2Fimplement&file-path-to-open=Main.elm
+
+If you are not working in Elm Editor, you can use the [Elm Fullstack compiler](https://github.com/elm-fullstack/elm-fullstack/releases) with the script [`implement/run.bat`](./implement/run.bat) to compile and run the app.
 
 ## Backlog
 
