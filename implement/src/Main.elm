@@ -111,9 +111,17 @@ locationSpecificContainerStyle =
 productVersionOverlay : Html.Html e
 productVersionOverlay =
     [ ("Freemake v" ++ productVersion) |> Html.text ]
-        |> Html.div (Visuals.htmlStyleFromList [ ( "position", "absolute" ), ( "top", "0px" ), ( "right", "0px" ), ( "margin", "5px" ) ])
+        |> Html.div
+            [ HA.style "position" "absolute"
+            , HA.style "position" "absolute"
+            , HA.style "top" "0px"
+            , HA.style "right" "0px"
+            , HA.style "margin" "5px"
+            , HA.style "user-select" "none"
+            , HA.style "opacity" "0.6"
+            ]
 
 
 productVersion : String
 productVersion =
-    "2021-01-03"
+    "2021-11-05"
