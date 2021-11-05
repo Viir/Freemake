@@ -4,7 +4,7 @@ This repository contains program code and resources to build the video game [Fre
 
 ![Screenshot of the Freemake game](./devlog/2021-01-03-freemake-game-screenshot.png)
 
-For background and project history, see the post at [A Remake of Freewar - Introducing Freemake](https://forum.distilled.games/t/a-remake-of-freewar-introducing-freemake/120)
+For background and project history, see the post at [A Remake of Freewar - Introducing Freemake](https://forum.gamelab.zone/t/a-remake-of-freewar-introducing-freemake/120)
 
 ## Hacking
 
