@@ -100,23 +100,25 @@ getValueOfFirstAttributeWithMatchingNameIgnoringCasing attributeName xmlElement 
 
 parseSvgTextWithLocation : XmlElement -> Maybe ( String, Point2d )
 parseSvgTextWithLocation xmlElement =
-    case xmlElement |> offsetFromSvgElementTransformMatrix of
-        Nothing ->
+    case xmlElement.children |> List.filterMap xmlNodeAsElement |> List.filter xmlElementIsText of
+        [ singleTextElement ] ->
+            let
+                offsets =
+                    [ xmlElement, singleTextElement ]
+                        |> List.filterMap offsetFromSvgElementTransformMatrix
+
+                aggregateOffset =
+                    List.foldl Vector2d.sum Vector2d.zero offsets
+
+                text =
+                    singleTextElement.children
+                        |> List.filterMap xmlNodeAsText
+                        |> String.concat
+            in
+            Just ( text, aggregateOffset |> Vector2d.components |> Point2d.fromCoordinates )
+
+        _ ->
             Nothing
-
-        Just transformOffset ->
-            case xmlElement.children |> List.filterMap xmlNodeAsElement |> List.filter xmlElementIsText of
-                [ singleTextElement ] ->
-                    let
-                        text =
-                            singleTextElement.children
-                                |> List.filterMap xmlNodeAsText
-                                |> String.concat
-                    in
-                    Just ( text, transformOffset |> Vector2d.components |> Point2d.fromCoordinates )
-
-                _ ->
-                    Nothing
 
 
 getOffsetFromSvgTransform : String -> Maybe Vector2d
